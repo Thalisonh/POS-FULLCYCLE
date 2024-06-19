@@ -15,7 +15,7 @@ import (
 func main() {
 	fmt.Printf("Start server")
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", GetDolar)
+	mux.HandleFunc("/cotacao", GetDolar)
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Errorf(err.Error())
 	}

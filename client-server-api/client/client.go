@@ -17,7 +17,7 @@ func main() {
 
 	filename := "cotacao.txt"
 
-	dolar := Do(ctx, "GET", "http://localhost:8080")
+	dolar := Do(ctx, "GET", "http://localhost:8080/cotacao")
 
 	_, err := readFile(filename)
 	if err != nil {
