@@ -51,7 +51,7 @@ func GetDolar(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 
-	err = Save(ctx, Dolar{})
+	err = Save(ctx, Dolar{response.USDBR.Bid})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -122,7 +122,7 @@ func Save(ctx context.Context, dolar Dolar) error {
 		return err
 	}
 
-	err = db.WithContext(ctx).Save(&dolar).Error
+	err = db.WithContext(ctx).Create(&dolar).Error
 	if err != nil {
 		return err
 	}
