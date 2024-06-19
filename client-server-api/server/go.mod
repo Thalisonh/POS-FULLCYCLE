@@ -1,4 +1,4 @@
-module github.com/Thalisonh/POS-FULLCYCLE/client-server-api
+module github.com/Thalisonh/POS-FULLCYCLE/client-server-api/server
 
 go 1.22.0
 
