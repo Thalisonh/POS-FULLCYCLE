@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -16,9 +18,22 @@ func main() {
 	fmt.Printf("Start server")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cotacao", GetDolar)
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8080", recoverMiddleware(mux)); err != nil {
 		fmt.Errorf(err.Error())
 	}
+}
+
+func recoverMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Panic: %s", r)
+				debug.PrintStack()
+				http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
 
 func GetDolar(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +47,11 @@ func GetDolar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := json.Marshal(Dolar{response.USDBR.Bid})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = Save(ctx, Dolar{})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -85,15 +105,24 @@ type Dolar struct {
 	Dolar string `json:"dolar"`
 }
 
-func Save(ctx context.Context, dolar DolarResponse) error {
-	dns := ""
+func connectSQLite() (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
 
-	db, err := gorm.Open(sqlite.Open(dns), &gorm.Config{})
+	db.AutoMigrate(&Dolar{})
+
+	return db, nil
+}
+
+func Save(ctx context.Context, dolar Dolar) error {
+	db, err := connectSQLite()
 	if err != nil {
 		return err
 	}
 
-	err = db.WithContext(ctx).Save(&dolar.USDBR).Error
+	err = db.WithContext(ctx).Save(&dolar).Error
 	if err != nil {
 		return err
 	}
