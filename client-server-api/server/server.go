@@ -117,6 +117,9 @@ func connectSQLite() (*gorm.DB, error) {
 }
 
 func Save(ctx context.Context, dolar Dolar) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*10)
+	defer cancel()
+
 	db, err := connectSQLite()
 	if err != nil {
 		return err
