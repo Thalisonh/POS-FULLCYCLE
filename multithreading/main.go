@@ -60,9 +60,9 @@ func main() {
 
 	select {
 	case b := <-brasilApi:
-		fmt.Printf("%v", b)
+		fmt.Printf("brasil-api: %v\n", b)
 	case v := <-viaCep:
-		fmt.Printf("%v", v)
+		fmt.Printf("via-cep: %v\n", v)
 	case <-time.After(time.Second):
 		fmt.Println("timeout")
 	}
