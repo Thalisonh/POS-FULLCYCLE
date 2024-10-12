@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/devfullcycle/20-CleanArch/pkg/events"
 	"github.com/streadway/amqp"
+	"github.com/thalisonh/20-CleanArch/pkg/events"
 )
 
 type OrderCreatedHandler struct {

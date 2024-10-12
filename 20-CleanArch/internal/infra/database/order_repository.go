@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 
-	"github.com/devfullcycle/20-CleanArch/internal/entity"
+	"github.com/thalisonh/20-CleanArch/internal/entity"
 )
 
 type OrderRepository struct {
@@ -33,4 +33,14 @@ func (r *OrderRepository) GetTotal() (int, error) {
 		return 0, err
 	}
 	return total, nil
+}
+
+func (r *OrderRepository) FindAll() ([]entity.Order, error) {
+	orders := entity.Order{}
+	err := r.Db.QueryRow("Select * from orders").Scan(&orders)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
