@@ -10,9 +10,7 @@ services:
       MYSQL_DATABASE: orders
       MYSQL_PASSWORD: root
     ports:
-      - 5555:5555
-    volumes:
-      - .docker/mysql:/var/lib/mysql
+      - 3306:3306
 
   rabbitmq:
     image: rabbitmq:3-management
