@@ -7,7 +7,6 @@
 package main
 
 import (
-	"database/sql"
 	"github.com/google/wire"
 	"github.com/thalisonh/20-CleanArch/internal/entity"
 	"github.com/thalisonh/20-CleanArch/internal/event"
@@ -15,28 +14,29 @@ import (
 	"github.com/thalisonh/20-CleanArch/internal/infra/web"
 	"github.com/thalisonh/20-CleanArch/internal/usecase"
 	"github.com/thalisonh/20-CleanArch/pkg/events"
+	"gorm.io/gorm"
 )
 
 import (
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // Injectors from wire.go:
 
-func NewCreateOrderUseCase(db *sql.DB, eventDispatcher events.EventDispatcherInterface) *usecase.CreateOrderUseCase {
+func NewCreateOrderUseCase(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *usecase.CreateOrderUseCase {
 	orderRepository := database.NewOrderRepository(db)
 	orderCreated := event.NewOrderCreated()
 	createOrderUseCase := usecase.NewCreateOrderUseCase(orderRepository, orderCreated, eventDispatcher)
 	return createOrderUseCase
 }
 
-func NewListOrderUseCase(db *sql.DB) *usecase.ListOrderUseCase {
+func NewListOrderUseCase(db *gorm.DB) *usecase.ListOrderUseCase {
 	orderRepository := database.NewOrderRepository(db)
 	listOrderUseCase := usecase.NewListOrderUseCase(orderRepository)
 	return listOrderUseCase
 }
 
-func NewWebOrderHandler(db *sql.DB, eventDispatcher events.EventDispatcherInterface) *web.WebOrderHandler {
+func NewWebOrderHandler(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *web.WebOrderHandler {
 	orderRepository := database.NewOrderRepository(db)
 	orderCreated := event.NewOrderCreated()
 	webOrderHandler := web.NewWebOrderHandler(eventDispatcher, orderRepository, orderCreated)

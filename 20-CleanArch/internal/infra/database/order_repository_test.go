@@ -1,30 +1,29 @@
 package database
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/thalisonh/20-CleanArch/internal/entity"
-
-	// sqlite3
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 type OrderRepositoryTestSuite struct {
 	suite.Suite
-	Db *sql.DB
+	Db *gorm.DB
 }
 
 func (suite *OrderRepositoryTestSuite) SetupSuite() {
-	db, err := sql.Open("sqlite3", ":memory:")
+	db, err := gorm.Open(sqlite.Open(":memory:?_pragma=foreign_keys(1)"), &gorm.Config{})
 	suite.NoError(err)
-	db.Exec("CREATE TABLE orders (id varchar(255) NOT NULL, price float NOT NULL, tax float NOT NULL, final_price float NOT NULL, PRIMARY KEY (id))")
+	db.AutoMigrate(&entity.Order{})
 	suite.Db = db
 }
 
 func (suite *OrderRepositoryTestSuite) TearDownTest() {
-	suite.Db.Close()
+	sqlDB, _ := suite.Db.DB()
+	sqlDB.Close()
 }
 
 func TestSuite(t *testing.T) {
@@ -40,8 +39,7 @@ func (suite *OrderRepositoryTestSuite) TestGivenAnOrder_WhenSave_ThenShouldSaveO
 	suite.NoError(err)
 
 	var orderResult entity.Order
-	err = suite.Db.QueryRow("Select id, price, tax, final_price from orders where id = ?", order.ID).
-		Scan(&orderResult.ID, &orderResult.Price, &orderResult.Tax, &orderResult.FinalPrice)
+	err = suite.Db.Where("id = ?", order.ID).First(&orderResult).Error
 
 	suite.NoError(err)
 	suite.Equal(order.ID, orderResult.ID)

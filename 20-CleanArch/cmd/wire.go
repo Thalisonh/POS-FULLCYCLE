@@ -4,8 +4,6 @@
 package main
 
 import (
-	"database/sql"
-
 	"github.com/google/wire"
 	"github.com/thalisonh/20-CleanArch/internal/entity"
 	"github.com/thalisonh/20-CleanArch/internal/event"
@@ -13,6 +11,7 @@ import (
 	"github.com/thalisonh/20-CleanArch/internal/infra/web"
 	"github.com/thalisonh/20-CleanArch/internal/usecase"
 	"github.com/thalisonh/20-CleanArch/pkg/events"
+	"gorm.io/gorm"
 )
 
 var setOrderRepositoryDependency = wire.NewSet(
@@ -32,7 +31,7 @@ var setOrderCreatedEvent = wire.NewSet(
 	wire.Bind(new(events.EventInterface), new(*event.OrderCreated)),
 )
 
-func NewCreateOrderUseCase(db *sql.DB, eventDispatcher events.EventDispatcherInterface) *usecase.CreateOrderUseCase {
+func NewCreateOrderUseCase(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *usecase.CreateOrderUseCase {
 	wire.Build(
 		setOrderRepositoryDependency,
 		setOrderCreatedEvent,
@@ -41,7 +40,7 @@ func NewCreateOrderUseCase(db *sql.DB, eventDispatcher events.EventDispatcherInt
 	return &usecase.CreateOrderUseCase{}
 }
 
-func NewListOrderUseCase(db *sql.DB) *usecase.ListOrderUseCase {
+func NewListOrderUseCase(db *gorm.DB) *usecase.ListOrderUseCase {
 	wire.Build(
 		setOrderRepositoryDependency,
 		usecase.NewListOrderUseCase,
@@ -50,7 +49,7 @@ func NewListOrderUseCase(db *sql.DB) *usecase.ListOrderUseCase {
 	return &usecase.ListOrderUseCase{}
 }
 
-func NewWebOrderHandler(db *sql.DB, eventDispatcher events.EventDispatcherInterface) *web.WebOrderHandler {
+func NewWebOrderHandler(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *web.WebOrderHandler {
 	wire.Build(
 		setOrderRepositoryDependency,
 		setOrderCreatedEvent,

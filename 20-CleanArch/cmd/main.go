@@ -1,15 +1,18 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
+	"log"
 	"net"
+	"time"
 	"net/http"
 
 	graphql_handler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/streadway/amqp"
 	"github.com/thalisonh/20-CleanArch/configs"
+	"github.com/thalisonh/20-CleanArch/internal/entity"
 	"github.com/thalisonh/20-CleanArch/internal/event/handler"
 	"github.com/thalisonh/20-CleanArch/internal/infra/graph"
 	"github.com/thalisonh/20-CleanArch/internal/infra/grpc/pb"
@@ -18,9 +21,9 @@ import (
 	"github.com/thalisonh/20-CleanArch/pkg/events"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"gorm.io/gorm"
 
-	// mysql
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
 )
 
 func main() {
@@ -28,12 +31,25 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	time.Sleep(time.Second * 10)
 
-	db, err := sql.Open(configs.DBDriver, fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", configs.DBUser, configs.DBPassword, configs.DBHost, configs.DBPort, configs.DBName))
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		configs.DBUser,
+		configs.DBPassword,
+		configs.DBHost,
+		configs.DBPort,
+		configs.DBName,
+	)
+	fmt.Printf(dsn)
+
+	log.Printf("\nConnecting to MYSQL database...")
+
+	database, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(err)
+		log.Fatal("ERROR: ", err)
 	}
-	defer db.Close()
+
+	database.AutoMigrate(&entity.Order{})
 
 	rabbitMQChannel := getRabbitMQChannel()
 
@@ -42,11 +58,11 @@ func main() {
 		RabbitMQChannel: rabbitMQChannel,
 	})
 
-	createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
-	listOrderUseCase := NewListOrderUseCase(db)
+	createOrderUseCase := NewCreateOrderUseCase(database, eventDispatcher)
+	listOrderUseCase := NewListOrderUseCase(database)
 
 	webserver := webserver.NewWebServer(configs.WebServerPort)
-	webOrderHandler := NewWebOrderHandler(db, eventDispatcher)
+	webOrderHandler := NewWebOrderHandler(database, eventDispatcher)
 	webserver.AddHandler("/order", webOrderHandler.Create)
 	webserver.AddHandler("/order/list", webOrderHandler.FindAll)
 	fmt.Println("Starting web server on port", configs.WebServerPort)

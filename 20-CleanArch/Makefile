@@ -10,4 +10,4 @@ migrationdown:
 .PHONY: migrate migrationdown createmigration
 
 run:
-	go run cmd/ordersystem/main.go cmd/ordersystem/wire_gen.go
+	go run cmd/main.go cmd/wire_gen.go
