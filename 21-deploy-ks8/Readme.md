@@ -29,3 +29,5 @@ kubectl logs server-7c5666bc7b-r6qp8
 kubectl apply -f k8s/service.yaml
 
 kubectl port-forward svc/serversvc 8080:8080
+
+kubectl describe pod server-7c5666bc7b-r6qp8

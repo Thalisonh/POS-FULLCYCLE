@@ -17,7 +17,7 @@ spec:
         image: thalisonhms/21-deploy-k8s:latest
         resources:
           limits:
-            memory: "32Mi"
-            cpu: "100m"
+            memory: "50Mi"
+            cpu: "200m"
         ports:
         - containerPort: 8080

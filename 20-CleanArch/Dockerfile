@@ -1,5 +1,5 @@
 # Start from the official Go image
-FROM golang:1.23
+FROM golang:latest as builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -28,6 +28,10 @@ ENV CGO_ENABLED=1
 # Build the Go app
 RUN go build -o /app/cmd/main /app/cmd/main.go /app/cmd/wire_gen.go 
 # Expose port 8080 to the outside world
+
+from scratch
+COPY --from=builder /app/cmd/main .
+
 EXPOSE 8080
 EXPOSE 8081
 EXPOSE 8082
