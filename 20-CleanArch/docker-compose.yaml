@@ -2,20 +2,22 @@ version: '3'
 
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:5.7
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: 123456789
       MYSQL_DATABASE: orders
-      MYSQL_PASSWORD: root
+      MYSQL_USER: fullcycle
+      MYSQL_PASSWORD: 123456789
     ports:
-      - "3308:3308"
+      - "3306:3306"
     expose:
-      - "3308"
-    healthcheck:
-      test: "exit 0"
+      - "3306"
+
     networks:
       - "mynet"
+    volumes:
+      - ./mysql:/var/lib/mysql
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -33,10 +35,10 @@ services:
       - "8080:8080"
     environment:
       - DB_DRIVER=mysql
-      - DB_HOST=127.0.0.1
-      - DB_PORT=3308
-      - DB_USER=root
-      - DB_PASSWORD=root
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=fullcycle
+      - DB_PASSWORD=123456789
       - DB_NAME=orders
       - WEB_SERVER_PORT=8080
       - GRPC_SERVER_PORT=8081
@@ -44,8 +46,7 @@ services:
     networks:
       - "mynet"
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
 
 networks:
   mynet:
