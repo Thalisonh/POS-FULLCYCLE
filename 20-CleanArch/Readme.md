@@ -4,3 +4,7 @@ mysql -uroot -p orders
 
 cd cmd/
 wire
+
+
+sudo docker-compose build
+docker-compose up -d
