@@ -1,14 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Address struct {
@@ -32,10 +29,13 @@ type WeatherResponse struct {
 }
 
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// err := godotenv.Load(".env")
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
+
+	// Desabilitar a verificação do certificado SSL
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	http.HandleFunc("/{cep}", handleRequest)
 
@@ -96,7 +96,7 @@ func getAddress(cep string) (Address, error) {
 }
 
 func getWeather(city string) (Weather, error) {
-	apiKey := os.Getenv("API_KEY")
+	apiKey := "356249fd69394d598dc213126241511"
 
 	response, err := http.Get(fmt.Sprintf("https://api.weatherapi.com/v1/current.json?q=%s&key=%s", city, apiKey))
 	if err != nil {

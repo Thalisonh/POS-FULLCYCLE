@@ -1,14 +1,17 @@
-FROM golang:1.22.3-alpine as build
+FROM golang:latest as build
+
 WORKDIR /app
 
-COPY . .
+COPY . /app
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o lab-cloud-run main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o api main.go
 
 FROM scratch
 
 WORKDIR /app
 
-COPY . .
-COPY --from=build /app/lab-cloud-run .
-ENTRYPOINT [ "./lab-cloud-run" ]
+COPY --from=build app/api ./
+
+EXPOSE 8080
+
+CMD [ "./api" ]
