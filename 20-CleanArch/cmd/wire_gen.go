@@ -9,11 +9,9 @@ package main
 import (
 	"github.com/google/wire"
 	"github.com/thalisonh/20-CleanArch/internal/entity"
-	"github.com/thalisonh/20-CleanArch/internal/event"
 	"github.com/thalisonh/20-CleanArch/internal/infra/database"
 	"github.com/thalisonh/20-CleanArch/internal/infra/web"
 	"github.com/thalisonh/20-CleanArch/internal/usecase"
-	"github.com/thalisonh/20-CleanArch/pkg/events"
 	"gorm.io/gorm"
 )
 
@@ -23,10 +21,9 @@ import (
 
 // Injectors from wire.go:
 
-func NewCreateOrderUseCase(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *usecase.CreateOrderUseCase {
+func NewCreateOrderUseCase(db *gorm.DB) *usecase.CreateOrderUseCase {
 	orderRepository := database.NewOrderRepository(db)
-	orderCreated := event.NewOrderCreated()
-	createOrderUseCase := usecase.NewCreateOrderUseCase(orderRepository, orderCreated, eventDispatcher)
+	createOrderUseCase := usecase.NewCreateOrderUseCase(orderRepository)
 	return createOrderUseCase
 }
 
@@ -36,17 +33,12 @@ func NewListOrderUseCase(db *gorm.DB) *usecase.ListOrderUseCase {
 	return listOrderUseCase
 }
 
-func NewWebOrderHandler(db *gorm.DB, eventDispatcher events.EventDispatcherInterface) *web.WebOrderHandler {
+func NewWebOrderHandler(db *gorm.DB) *web.WebOrderHandler {
 	orderRepository := database.NewOrderRepository(db)
-	orderCreated := event.NewOrderCreated()
-	webOrderHandler := web.NewWebOrderHandler(eventDispatcher, orderRepository, orderCreated)
+	webOrderHandler := web.NewWebOrderHandler(orderRepository)
 	return webOrderHandler
 }
 
 // wire.go:
 
 var setOrderRepositoryDependency = wire.NewSet(database.NewOrderRepository, wire.Bind(new(entity.OrderRepositoryInterface), new(*database.OrderRepository)))
-
-var setEventDispatcherDependency = wire.NewSet(events.NewEventDispatcher, event.NewOrderCreated, wire.Bind(new(events.EventInterface), new(*event.OrderCreated)), wire.Bind(new(events.EventDispatcherInterface), new(*events.EventDispatcher)))
-
-var setOrderCreatedEvent = wire.NewSet(event.NewOrderCreated, wire.Bind(new(events.EventInterface), new(*event.OrderCreated)))

@@ -6,24 +6,17 @@ import (
 
 	"github.com/thalisonh/20-CleanArch/internal/entity"
 	"github.com/thalisonh/20-CleanArch/internal/usecase"
-	"github.com/thalisonh/20-CleanArch/pkg/events"
 )
 
 type WebOrderHandler struct {
-	EventDispatcher   events.EventDispatcherInterface
-	OrderRepository   entity.OrderRepositoryInterface
-	OrderCreatedEvent events.EventInterface
+	OrderRepository entity.OrderRepositoryInterface
 }
 
 func NewWebOrderHandler(
-	EventDispatcher events.EventDispatcherInterface,
 	OrderRepository entity.OrderRepositoryInterface,
-	OrderCreatedEvent events.EventInterface,
 ) *WebOrderHandler {
 	return &WebOrderHandler{
-		EventDispatcher:   EventDispatcher,
-		OrderRepository:   OrderRepository,
-		OrderCreatedEvent: OrderCreatedEvent,
+		OrderRepository: OrderRepository,
 	}
 }
 
@@ -35,7 +28,7 @@ func (h *WebOrderHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createOrder := usecase.NewCreateOrderUseCase(h.OrderRepository, h.OrderCreatedEvent, h.EventDispatcher)
+	createOrder := usecase.NewCreateOrderUseCase(h.OrderRepository)
 	output, err := createOrder.Execute(dto)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

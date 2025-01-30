@@ -6,14 +6,28 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/thalisonh/20-CleanArch/internal/infra/graph/model"
+	"github.com/thalisonh/20-CleanArch/internal/usecase"
 )
 
 // CreateOrder is the resolver for the createOrder field.
 func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.OrderInput) (*model.Order, error) {
-	panic(fmt.Errorf("not implemented: CreateOrder - createOrder"))
+	out, err := r.CreateOrderUseCase.Execute(usecase.OrderInputDTO{
+		ID:    input.ID,
+		Price: input.Price,
+		Tax:   input.Tax,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Order{
+		ID:         out.ID,
+		Price:      out.Price,
+		Tax:        out.Tax,
+		FinalPrice: out.FinalPrice,
+	}, nil
 }
 
 // Orders is the resolver for the orders field.

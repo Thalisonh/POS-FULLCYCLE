@@ -10,15 +10,12 @@ import (
 	graphql_handler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/streadway/amqp"
 	"github.com/thalisonh/20-CleanArch/configs"
 	"github.com/thalisonh/20-CleanArch/internal/entity"
-	"github.com/thalisonh/20-CleanArch/internal/event/handler"
 	"github.com/thalisonh/20-CleanArch/internal/infra/graph"
 	"github.com/thalisonh/20-CleanArch/internal/infra/grpc/pb"
 	"github.com/thalisonh/20-CleanArch/internal/infra/grpc/service"
 	"github.com/thalisonh/20-CleanArch/internal/infra/web/webserver"
-	"github.com/thalisonh/20-CleanArch/pkg/events"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"gorm.io/gorm"
@@ -60,18 +57,11 @@ func main() {
 
 	database.AutoMigrate(&entity.Order{})
 
-	rabbitMQChannel := getRabbitMQChannel()
-
-	eventDispatcher := events.NewEventDispatcher()
-	eventDispatcher.Register("OrderCreated", &handler.OrderCreatedHandler{
-		RabbitMQChannel: rabbitMQChannel,
-	})
-
-	createOrderUseCase := NewCreateOrderUseCase(database, eventDispatcher)
+	createOrderUseCase := NewCreateOrderUseCase(database)
 	listOrderUseCase := NewListOrderUseCase(database)
 
 	webserver := webserver.NewWebServer(configs.WebServerPort)
-	webOrderHandler := NewWebOrderHandler(database, eventDispatcher)
+	webOrderHandler := NewWebOrderHandler(database)
 	webserver.AddHandler("/order", webOrderHandler.Create)
 	webserver.AddHandler("/order/list", webOrderHandler.FindAll)
 	fmt.Println("Starting web server on port", configs.WebServerPort)
@@ -91,22 +81,11 @@ func main() {
 
 	srv := graphql_handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		CreateOrderUseCase: *createOrderUseCase,
+		ListOrdersUseCase:  *listOrderUseCase,
 	}}))
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
 
 	fmt.Println("Starting GraphQL server on port", configs.GraphQLServerPort)
 	http.ListenAndServe(":"+configs.GraphQLServerPort, nil)
-}
-
-func getRabbitMQChannel() *amqp.Channel {
-	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// ch, err := conn.Channel()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	return nil
 }
