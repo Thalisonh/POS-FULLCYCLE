@@ -1,40 +1,45 @@
-# Start from the official Go image
-FROM golang:latest as builder
+# Etapa de build
+FROM golang:1.23 AS build
 
-# Set the Current Working Directory inside the container
+# Definir o diretório de trabalho
 WORKDIR /app
 
-# Copy go.mod and go.sum files
-COPY go.mod go.sum ./
-
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
-RUN go mod download
-
-# Copy the source from the current directory to the Working Directory inside the container
+# Copiar os arquivos do projeto para dentro do contêiner
 COPY . .
 
-# Set environment variable for the views directory
+# Baixar dependências e compilar a aplicação
+#RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o app /app/cmd/main.go /app/cmd/wire_gen.go 
+
+# Imagem final
+FROM alpine:3.18
+
+# Definir variáveis de ambiente
 ENV DB_DRIVER=mysql
-ENV DB_HOST=host.docker.internal
+ENV DB_HOST=127.0.0.1
 ENV DB_PORT=3306
 ENV DB_USER=root
 ENV DB_PASSWORD=root
 ENV DB_NAME=orders
-ENV WEB_SERVER_PORT=8080
-ENV GRPC_SERVER_PORT=8081
-ENV GRAPHQL_SERVER_PORT=8082
-ENV CGO_ENABLED=1
+ENV WEB_SERVER_PORT=:8000
+ENV GRPC_SERVER_PORT=50051
+ENV GRAPHQL_SERVER_PORT=8080
+ENV MYSQL_USER=root
+ENV MYSQL_ROOT_PASSWORD=root
 
-# Build the Go app
-RUN go build -o /app/cmd/main /app/cmd/main.go /app/cmd/wire_gen.go 
-# Expose port 8080 to the outside world
 
-from scratch
-COPY --from=builder /app/cmd/main .
 
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar o binário compilado e o arquivo .env para a imagem final
+COPY --from=build /app/app .
+COPY .env .
+
+# Expor a porta onde a aplicação será executada
 EXPOSE 8080
-EXPOSE 8081
 EXPOSE 8082
+EXPOSE 8083
 
-# Run the executable
-CMD ["/app/cmd/main"]
+# Comando para executar a aplicação
+CMD ["./app"]

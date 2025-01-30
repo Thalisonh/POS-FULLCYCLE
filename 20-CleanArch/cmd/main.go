@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"time"
 	"net/http"
+	"time"
 
 	graphql_handler "github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -33,14 +33,15 @@ func main() {
 	}
 	time.Sleep(time.Second * 10)
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		configs.DBUser,
-		configs.DBPassword,
-		configs.DBHost,
-		configs.DBPort,
-		configs.DBName,
-	)
-	fmt.Printf(dsn)
+	// dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	// 	configs.MYSQLUser,
+	// 	configs.MYSQLPassword,
+	// 	configs.DBHost,
+	// 	configs.DBPort,
+	// 	configs.MYSQLName,
+	// )
+	dsn := "root:root@tcp(mysql:3306)/orders?charset=utf8mb4&parseTime=True&loc=Local"
+	fmt.Println(dsn)
 
 	log.Printf("\nConnecting to MYSQL database...")
 
@@ -48,6 +49,14 @@ func main() {
 	if err != nil {
 		log.Fatal("ERROR: ", err)
 	}
+	sqlDB, err := database.DB()
+	if err != nil {
+		// control error
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	database.AutoMigrate(&entity.Order{})
 
@@ -91,13 +100,13 @@ func main() {
 }
 
 func getRabbitMQChannel() *amqp.Channel {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		panic(err)
-	}
-	ch, err := conn.Channel()
-	if err != nil {
-		panic(err)
-	}
-	return ch
+	// conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// ch, err := conn.Channel()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	return nil
 }
