@@ -30,14 +30,14 @@ func main() {
 	}
 	time.Sleep(time.Second * 10)
 
-	// dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-	// 	configs.MYSQLUser,
-	// 	configs.MYSQLPassword,
-	// 	configs.DBHost,
-	// 	configs.DBPort,
-	// 	configs.MYSQLName,
-	// )
-	dsn := "root:root@tcp(mysql:3306)/orders?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		configs.DBUser,
+		configs.DBPassword,
+		configs.DBHost,
+		configs.DBPort,
+		configs.DBName,
+	)
+	// dsn := "root:root@tcp(mysql:3306)/orders?charset=utf8mb4&parseTime=True&loc=Local"
 	fmt.Println(dsn)
 
 	log.Printf("\nConnecting to MYSQL database...")
@@ -48,7 +48,7 @@ func main() {
 	}
 	sqlDB, err := database.DB()
 	if err != nil {
-		// control error
+		log.Fatal("ERROR: ", err)
 	}
 
 	sqlDB.SetMaxIdleConns(10)
