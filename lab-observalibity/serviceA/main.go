@@ -3,17 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
 func main() {
-	http.HandleFunc("/{cep}", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		HandleRequest(w, r)
-	})
+	http.HandleFunc("/", HandleRequest)
 
 	fmt.Println("Server is running on port 8080")
 	http.ListenAndServe(":8080", nil)
@@ -23,29 +18,53 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cep := Cep{}
-	// Do something
-	if err := json.NewEncoder(w).Encode(&cep); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&cep); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
 	}
 
-	// validate size of the cep
 	if len(cep.Cep) != 8 {
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Invalid zipcode",
+		})
 
 		return
 	}
 
-	_, err := http.NewRequestWithContext(ctx, "POST", "http://localhost:8081", nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("http://localhost:8081/%s", cep.Cep), nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	// call service b
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	var response Response
+	if err := json.Unmarshal(body, &response); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
 	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(response)
 }
 
 type Cep struct {
@@ -53,4 +72,8 @@ type Cep struct {
 }
 
 type Response struct {
+	City       string  `json:"city"`
+	Celsius    float64 `json:"temp_C"`
+	Fahrenheit float64 `json:"temp_F"`
+	Kelvin     float64 `json:"temp_K"`
 }
