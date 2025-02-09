@@ -1,21 +1,67 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
+
+	"github.com/spf13/viper"
+	"github.com/thalison/POS/lab-observability/pkg"
+	"github.com/thalison/POS/lab-observability/server"
+	"go.opentelemetry.io/otel"
 )
 
 func main() {
-	http.HandleFunc("/", HandleRequest)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
 
-	fmt.Println("Server is running on port 8080")
-	http.ListenAndServe(":8080", nil)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	shutdown, err := pkg.InitProvider("serviceA", viper.GetString("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	tracer := otel.Tracer("serviceA")
+	svc := server.NewServer(&server.Config{
+		OTELTracer: tracer,
+	})
+
+	svc.CreateServer(HandleRequest)
+
+	select {
+	case <-sigCh:
+		log.Println("shutting down")
+	case <-ctx.Done():
+		log.Println("context done")
+	}
+
+	_, shotdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shotdownCancel()
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request) {
+	// carrier := propagation.HeaderCarrier(r.Header)
 	ctx := r.Context()
+	// ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
+
+	// ctx, spanStart := h.Config.OTELTracer.Start(ctx, "Span Start")
+	// defer spanStart.End()
+
+	// ctx, span := h.Config.OTELTracer.Start(ctx, h.Config.RequestNameOTEL)
+	// defer span.End()
 
 	cep := Cep{}
 	if err := json.NewDecoder(r.Body).Decode(&cep); err != nil {

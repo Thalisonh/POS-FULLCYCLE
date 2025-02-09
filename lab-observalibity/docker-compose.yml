@@ -2,19 +2,19 @@ version: '3'
 
 services:
   jaegar-all-in-one:
-    image: jaegartracing/all-in-one
+    image: jaegartracing/all-in-one:latest
     restart: always
     ports:
       - "16686:16686"
       - "14268"
-      - "14250"
+      - "14250" 
   
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
     restart: always
     volumes:
-      - .docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./.docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
 
