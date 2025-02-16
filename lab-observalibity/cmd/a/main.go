@@ -7,24 +7,24 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
 
-	"github.com/spf13/viper"
+	"github.com/thalison/POS/lab-observability/configs"
 	"github.com/thalison/POS/lab-observability/pkg"
 	"github.com/thalison/POS/lab-observability/server"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
+var tracer = otel.Tracer("serviceA")
+
 func main() {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
+	configs, err := configs.LoadConfig(".")
+	if err != nil {
+		panic(err)
+	}
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	shutdown, err := pkg.InitProvider("serviceA", viper.GetString("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	ctx := context.Background()
+	shutdown, err := pkg.InitProvider("service_a", configs.OtelExporterOtlpEndpoint)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,34 +34,23 @@ func main() {
 		}
 	}()
 
-	tracer := otel.Tracer("serviceA")
 	svc := server.NewServer(&server.Config{
 		OTELTracer: tracer,
 	})
 
-	svc.CreateServer(HandleRequest)
+	route := svc.CreateServer()
+	route.Get("/", HandleRequest)
 
-	select {
-	case <-sigCh:
-		log.Println("shutting down")
-	case <-ctx.Done():
-		log.Println("context done")
-	}
-
-	_, shotdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shotdownCancel()
+	http.ListenAndServe(configs.HostPortServiceA, route)
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request) {
-	// carrier := propagation.HeaderCarrier(r.Header)
+	carrier := propagation.HeaderCarrier(r.Header)
 	ctx := r.Context()
-	// ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
+	ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
 
-	// ctx, spanStart := h.Config.OTELTracer.Start(ctx, "Span Start")
-	// defer spanStart.End()
-
-	// ctx, span := h.Config.OTELTracer.Start(ctx, h.Config.RequestNameOTEL)
-	// defer span.End()
+	ctx, span := tracer.Start(ctx, "service_A")
+	defer span.End()
 
 	cep := Cep{}
 	if err := json.NewDecoder(r.Body).Decode(&cep); err != nil {

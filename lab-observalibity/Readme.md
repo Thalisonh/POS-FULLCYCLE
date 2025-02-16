@@ -48,3 +48,5 @@ Entrega:
 O código-fonte completo da implementação.
 Documentação explicando como rodar o projeto em ambiente dev.
 Utilize docker/docker-compose para que possamos realizar os testes de sua aplicação.
+
+docker-compose up --build

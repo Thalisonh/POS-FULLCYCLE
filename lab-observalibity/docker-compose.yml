@@ -1,20 +1,26 @@
 version: '3'
 
 services:
-  jaegar-all-in-one:
-    image: jaegartracing/all-in-one:latest
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
     restart: always
     ports:
       - "16686:16686"
       - "14268"
-      - "14250" 
+      - "14250"
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
   
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
     restart: always
-    volumes:
-      - ./.docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    # volumes:
+    #   - ./.docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
 
@@ -29,9 +35,11 @@ services:
       - "8889:8889"
       - "4317:4317"
     
-  serviceA:
-    container_name: serviceA
-    build: path/to/serviceA
+  service_a:
+    container_name: servicea
+    build: 
+      context: .
+      dockerfile: cmd/a/Dockerfile
     environment:
       - TITLE=serviceA
       - CONTENT=serviceA
@@ -43,24 +51,26 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - jaegar-all-in-one
+      - jaeger-all-in-one
       - prometheus
       - otel-collector
 
-  serviceB:
-    container_name: serviceB
-    build: path/to/serviceB
+  service_b:
+    container_name: serviceb
+    build: 
+      context: .
+      dockerfile: cmd/b/Dockerfile
     environment:
-      - TITLE=serviceB
-      - CONTENT=serviceB
+      - TITLE=service_b
+      - CONTENT=service_b
       - BACKGROUND_COLOR=blue
-      - REQUEST_NAME_OTEL=serviceB
-      - OTEL_SERVICE_NAME=serviceB
+      - REQUEST_NAME_OTEL=service_b
+      - OTEL_SERVICE_NAME=service_b
       - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
       - HTTP_PORT=8081
     ports:
       - "8081:8081"
     depends_on:
-      - jaegar-all-in-one
+      - jaeger-all-in-one
       - prometheus
       - otel-collector

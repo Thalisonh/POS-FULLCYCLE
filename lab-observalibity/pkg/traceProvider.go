@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -11,11 +12,10 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // todo fazer separado
-func InitProvider(serviceName, coolectorURL string) (func(context.Context) error, error) {
+func InitProvider(serviceName, colectorURL string) (func(context.Context) error, error) {
 	ctx := context.Background()
 
 	res, err := resource.New(ctx, resource.WithAttributes(
@@ -26,13 +26,11 @@ func InitProvider(serviceName, coolectorURL string) (func(context.Context) error
 		return nil, err // log error
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
-	conn, err := grpc.DialContext(ctx, coolectorURL,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
-	)
+	conn, err := grpc.NewClient(colectorURL, grpc.WithInsecure())
 	if err != nil {
+		fmt.Println("aqui")
 		return nil, err // log error
 	}
 
