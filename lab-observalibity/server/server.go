@@ -4,22 +4,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/thalison/POS/lab-observability/configs"
 )
 
-type Config struct {
-	OTELTracer         trace.Tracer
-	RequestNameOTEL    string
-	ExternalCallUrl    string
-	ExternalCallMethod string
-	Content            string
-}
-
 type WebServer struct {
-	Config *Config
+	Config *configs.Config
 }
 
-func NewServer(config *Config) *WebServer {
+func NewServer(config *configs.Config) *WebServer {
 	return &WebServer{Config: config}
 }
 
@@ -35,5 +27,3 @@ func (we *WebServer) CreateServer(serviceName string) *chi.Mux {
 
 	return router
 }
-
-const endpointURL = "http://localhost:9411/api/v2/spans"

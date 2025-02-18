@@ -43,19 +43,19 @@ services:
       context: .
       dockerfile: cmd/a/Dockerfile
     environment:
-      - TITLE=serviceA
-      - CONTENT=serviceA
-      - BACKGROUND_COLOR=blue
-      - REQUEST_NAME_OTEL=serviceA
-      - OTEL_SERVICE_NAME=serviceA
-      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
-      - HTTP_PORT=8080
+      - PORT_SERVICE_A=:9000
+      - PORT_B=:8000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:8889
+      - SERVICE_NAME_A=service_a
+      - SERVICE_NAME_B=service_b
+      - SERVICE_B_URL=http://serviceb:8000/
+      - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
     ports:
-      - "8080:8080"
+      - "9000:9000"
     depends_on:
-      - jaeger-all-in-one
       - prometheus
       - otel-collector
+      - zipkin
 
   service_b:
     container_name: serviceb
@@ -63,16 +63,14 @@ services:
       context: .
       dockerfile: cmd/b/Dockerfile
     environment:
-      - TITLE=service_b
-      - CONTENT=service_b
-      - BACKGROUND_COLOR=blue
-      - REQUEST_NAME_OTEL=service_b
-      - OTEL_SERVICE_NAME=service_b
-      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
-      - HTTP_PORT=8081
+    - PORT_SERVICE_A=:9000
+    - PORT_B=:8000
+    - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:8889
+    - SERVICE_NAME_A=service_a
+    - SERVICE_NAME_B=service_b
+    - ZIPKIN_URL=http://zipkin:9411/api/v2/spans
     ports:
-      - "8081:8081"
+      - "8000:8000"
     depends_on:
-      - jaeger-all-in-one
       - prometheus
       - otel-collector

@@ -20,19 +20,19 @@ import (
 var tracer = otel.Tracer("serviceB")
 
 func main() {
-	configs, err := configs.LoadConfig(".")
+	config, err := configs.LoadConfig(".")
 	if err != nil {
 		panic(err)
 	}
 	ctx := context.Background()
 
-	exporter, err := zipkin.New("")
+	exporter, err := zipkin.New(config.ZipkinUrl)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error initializing zipkin exporter: %v", err))
 	}
 	defer exporter.Shutdown(ctx)
 
-	shutdown, err := pkg.InitProvider("serviceB", configs.OtelExporterOtlpEndpoint, exporter)
+	shutdown, err := pkg.InitProvider("serviceB", config.OtelExporterOtlpEndpoint, exporter)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error initializing provider init: %v", err))
 	}
@@ -42,16 +42,17 @@ func main() {
 		}
 	}()
 
-	svc := server.NewServer(&server.Config{
+	svc := server.NewServer(&configs.Config{
 		OTELTracer: tracer,
 	})
 
-	route := svc.CreateServer(configs.ServiceNameB)
+	route := svc.CreateServer(config.ServiceNameB)
 
 	route.Post("/{cep}", HandleRequest)
 
-	fmt.Println(fmt.Sprintf("running on port %s", configs.HostPortServiceB))
-	http.ListenAndServe(configs.HostPortServiceB, route)
+	fmt.Println(fmt.Sprintf("server name %s", config.ServiceNameB))
+	fmt.Println(fmt.Sprintf("running on port %s", config.PortB))
+	http.ListenAndServe(config.PortB, route)
 }
 
 func HandleRequest(w http.ResponseWriter, r *http.Request) {

@@ -18,20 +18,20 @@ import (
 var tracer = otel.Tracer("service_a")
 
 func main() {
-	configs, err := configs.LoadConfig(".")
+	config, err := configs.LoadConfig(".")
 	if err != nil {
 		panic(err)
 	}
 
 	ctx := context.Background()
 
-	exporter, err := zipkin.New("")
+	exporter, err := zipkin.New(config.ZipkinUrl)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("zipkin exporter: %v", err))
 	}
 	defer exporter.Shutdown(ctx)
 
-	shutdown, err := pkg.InitProvider("service_a", configs.OtelExporterOtlpEndpoint, exporter)
+	shutdown, err := pkg.InitProvider("service_a", config.OtelExporterOtlpEndpoint, exporter)
 	if err != nil {
 		fmt.Errorf("errro init provider")
 		panic(err)
@@ -43,18 +43,30 @@ func main() {
 		}
 	}()
 
-	svc := server.NewServer(&server.Config{
+	svc := server.NewServer(&configs.Config{
 		OTELTracer: tracer,
 	})
-	route := svc.CreateServer(configs.ServiceNameA)
+	route := svc.CreateServer(config.ServiceNameA)
+	handler := NewHandler(&configs.Config{
+		ServiceBUrl: config.ServiceBUrl,
+	})
 
-	route.Post("/", HandleRequest)
+	route.Post("/", handler.HandleRequest)
 
-	fmt.Println(fmt.Sprintf("running on port %s", configs.HostPortServiceA))
-	http.ListenAndServe(configs.HostPortServiceA, route)
+	fmt.Println(fmt.Sprintf("server name %s", config.ServiceNameA))
+	fmt.Println(fmt.Sprintf("running on port %s", config.PortServiceA))
+	http.ListenAndServe(config.PortServiceA, route)
 }
 
-func HandleRequest(w http.ResponseWriter, r *http.Request) {
+type Handler struct {
+	Config *configs.Config
+}
+
+func NewHandler(config *configs.Config) *Handler {
+	return &Handler{Config: config}
+}
+
+func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	carrier := propagation.HeaderCarrier(r.Header)
 	ctx := r.Context()
 	ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
@@ -64,6 +76,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	cep := Cep{}
 	if err := json.NewDecoder(r.Body).Decode(&cep); err != nil {
+		fmt.Errorf(err.Error())
+
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		json.NewEncoder(w).Encode(map[string]string{
@@ -74,6 +88,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(cep.Cep) != 8 {
+		fmt.Errorf("invalid cep")
+
 		w.WriteHeader(http.StatusUnprocessableEntity)
 
 		json.NewEncoder(w).Encode(map[string]string{
@@ -83,17 +99,19 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("http://localhost:8001/%s", cep.Cep), nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s%s", h.Config.ServiceBUrl, cep.Cep), nil)
 	if err != nil {
+		fmt.Errorf(err.Error())
+
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
-
 	resp, err := http.DefaultClient.Do(req)
-	fmt.Println(err)
 	if err != nil {
+		fmt.Println(err)
+
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -102,6 +120,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Errorf(err.Error())
+
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -109,6 +129,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	var response Response
 	if err := json.Unmarshal(body, &response); err != nil {
+		fmt.Errorf(err.Error())
+
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return

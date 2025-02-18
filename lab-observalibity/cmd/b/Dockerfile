@@ -1,42 +1,25 @@
 FROM golang:1.23 AS build
 
-# Definir o diretório de trabalho
 WORKDIR /app
 
-# Copiar os arquivos do projeto para dentro do contêiner
 COPY . .
 
-# Baixar dependências e compilar a aplicação
-#RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -o app /app/cmd/a/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o app /app/cmd/b/main.go
 
-# Imagem final
 FROM alpine:3.18
 
-# Definir variáveis de ambiente
-ENV DB_HOST=mysql
-ENV DB_PORT=3306
-ENV DB_USER=root
-ENV DB_PASSWORD=root
-ENV DB_DRIVER=mysql
-ENV DB_NAME=orders
-ENV WEB_SERVER_PORT=8080
-ENV GRPC_SERVER_PORT=8081
-ENV GRAPHQL_SERVER_PORT=8082
+ENV PORT_SERVICE_A=:9000
+ENV PORT_B=:8000
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:8889
+ENV SERVICE_NAME_A=service_a
+ENV SERVICE_NAME_B=service_b
+ENV ZIPKIN_URL=http://zipkin:9411/api/v2/spans
 
-
-
-# Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar o binário compilado e o arquivo .env para a imagem final
 COPY --from=build /app/app .
 COPY .env .
 
-# Expor a porta onde a aplicação será executada
-EXPOSE 8080
-EXPOSE 8082
-EXPOSE 8083
+EXPOSE 8000
 
-# Comando para executar a aplicação
 CMD ["./app"]
