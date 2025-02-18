@@ -6,6 +6,8 @@ type conf struct {
 	OtelExporterOtlpEndpoint string `mapstructure:"OTEL_EXPORTER_OTLP_ENDPOINT"`
 	HostPortServiceA         string `mapstructure:"HOST_PORT_SERVICE_A"`
 	HostPortServiceB         string `mapstructure:"HOST_PORT_SERVICE_B"`
+	ServiceNameA             string `mapstructure:"SERVICE_NAME_A"`
+	ServiceNameB             string `mapstructure:"SERVICE_NAME_B"`
 }
 
 func LoadConfig(path string) (*conf, error) {

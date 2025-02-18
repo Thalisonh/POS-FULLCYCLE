@@ -7,10 +7,13 @@ import (
 	"io"
 	"net/http"
 
+	// "github.com/openzipkin/zipkin-go"
+
 	"github.com/thalison/POS/lab-observability/configs"
 	"github.com/thalison/POS/lab-observability/pkg"
 	"github.com/thalison/POS/lab-observability/server"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 )
 
@@ -21,9 +24,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	ctx := context.Background()
-	shutdown, err := pkg.InitProvider("serviceB", configs.OtelExporterOtlpEndpoint)
+
+	exporter, err := zipkin.New("")
+	if err != nil {
+		fmt.Println(fmt.Sprintf("error initializing zipkin exporter: %v", err))
+	}
+	defer exporter.Shutdown(ctx)
+
+	shutdown, err := pkg.InitProvider("serviceB", configs.OtelExporterOtlpEndpoint, exporter)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error initializing provider init: %v", err))
 	}
@@ -37,10 +46,11 @@ func main() {
 		OTELTracer: tracer,
 	})
 
-	route := svc.CreateServer()
-	route.Get("/", HandleRequest)
-	fmt.Println(configs.HostPortServiceB)
+	route := svc.CreateServer(configs.ServiceNameB)
 
+	route.Post("/{cep}", HandleRequest)
+
+	fmt.Println(fmt.Sprintf("running on port %s", configs.HostPortServiceB))
 	http.ListenAndServe(configs.HostPortServiceB, route)
 }
 
@@ -73,7 +83,7 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	getAddressSpan.End()
 
-	ctx, getWeatherSpan := tracer.Start(ctx, "get address")
+	ctx, getWeatherSpan := tracer.Start(ctx, "get weather")
 	weather, err := GetWeather(address.City)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("get weather error: %v", err))

@@ -10,6 +10,7 @@ services:
       - "14250"
 
   zipkin:
+    container_name: zipkin
     image: openzipkin/zipkin:latest
     restart: always
     ports:
@@ -25,6 +26,7 @@ services:
       - "9090:9090"
 
   otel-collector:
+    container_name: otel-collector
     image: otel/opentelemetry-collector:latest
     restart: always
     command: ["--config=/etc/otel-collector-config.yaml"]

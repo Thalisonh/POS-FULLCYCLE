@@ -2,11 +2,11 @@ package pkg
 
 import (
 	"context"
-	"fmt"
-	"time"
+	"errors"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -14,8 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// todo fazer separado
-func InitProvider(serviceName, colectorURL string) (func(context.Context) error, error) {
+func InitProvider(serviceName, colectorURL string, exporter *zipkin.Exporter) (func(context.Context) error, error) {
 	ctx := context.Background()
 
 	res, err := resource.New(ctx, resource.WithAttributes(
@@ -23,26 +22,24 @@ func InitProvider(serviceName, colectorURL string) (func(context.Context) error,
 	),
 	)
 	if err != nil {
-		return nil, err // log error
+		return nil, errors.Join(err, errors.New("fail to start new resource"))
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
-	defer cancel()
 	conn, err := grpc.NewClient(colectorURL, grpc.WithInsecure())
 	if err != nil {
-		fmt.Println("aqui")
-		return nil, err // log error
+		return nil, errors.Join(err, errors.New("fail to start new grpc client"))
 	}
 
 	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
 	if err != nil {
-		return nil, err // log error
+		return nil, errors.Join(err, errors.New("fail to start traceExporter"))
 	}
 
 	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithResource(res),
+		sdktrace.WithBatcher(exporter),
 		sdktrace.WithSpanProcessor(bsp),
 	)
 	otel.SetTracerProvider(traceProvider)
