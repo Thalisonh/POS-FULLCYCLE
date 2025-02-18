@@ -20,8 +20,6 @@ services:
     container_name: prometheus
     image: prom/prometheus:latest
     restart: always
-    # volumes:
-    #   - ./.docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
 
@@ -74,3 +72,4 @@ services:
     depends_on:
       - prometheus
       - otel-collector
+
