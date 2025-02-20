@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -117,7 +118,14 @@ func GetAddress(cep string) (Address, error) {
 	}
 
 	var address Address
-	json.Unmarshal(body, &address)
+	err = json.Unmarshal(body, &address)
+	if err != nil {
+		return Address{}, err
+	}
+
+	if address.City == "" {
+		return Address{}, errors.New("record not found")
+	}
 
 	return address, nil
 }

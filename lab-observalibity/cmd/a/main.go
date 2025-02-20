@@ -126,6 +126,21 @@ func (h *Handler) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	if resp.StatusCode == http.StatusNotFound {
+		w.WriteHeader(http.StatusNotFound)
+
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "Zipcode not found",
+		})
+
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
 
 	var response Response
 	if err := json.Unmarshal(body, &response); err != nil {
