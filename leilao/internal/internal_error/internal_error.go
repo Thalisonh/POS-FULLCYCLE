@@ -5,6 +5,10 @@ type InternalError struct {
 	Err     string
 }
 
+func (ie *InternalError) Error() string {
+	return ie.Message
+}
+
 func NewNotFoundError(message string) *InternalError {
 	return &InternalError{
 		Message: message,
