@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	// "github.com/openzipkin/zipkin-go"
 
@@ -133,7 +134,9 @@ func GetAddress(cep string) (Address, error) {
 func GetWeather(city string) (Weather, error) {
 	apiKey := "356249fd69394d598dc213126241511"
 
-	response, err := http.Get(fmt.Sprintf("https://api.weatherapi.com/v1/current.json?q=%s&key=%s", city, apiKey))
+	encodedCity := url.QueryEscape(city)
+
+	response, err := http.Get(fmt.Sprintf("https://api.weatherapi.com/v1/current.json?q=%s&key=%s", encodedCity, apiKey))
 	if err != nil {
 		return Weather{}, err
 	}
