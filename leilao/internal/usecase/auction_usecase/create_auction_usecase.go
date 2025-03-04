@@ -10,10 +10,38 @@ import (
 	"github.com/thalisonh/auction/internal/usecase/bid_usecase"
 )
 
+func NewAuctionUseCase(
+	auctionRepository auction_entity.AuctionRepositoryInterface,
+	bidRepository bid_entity.BidEntityRepository,
+) AuctionUseCaseInterface {
+	return &AuctionUseCase{
+		auctionRepositoryInterface: auctionRepository,
+		bidRepositoryInterface:     bidRepository,
+	}
+}
+
+type AuctionUseCaseInterface interface {
+	CreateAuction(
+		ctx context.Context,
+		auctionInput AuctionInputDTO,
+	) *internal_error.InternalError
+	FindAuctionById(
+		ctx context.Context, id string,
+	) (*AuctionOutputDTO, *internal_error.InternalError)
+	FindAuctions(
+		ctx context.Context,
+		status auction_entity.AuctionStatus,
+		category, productName string,
+	) ([]AuctionOutputDTO, *internal_error.InternalError)
+	FindWinningBidByAuctionId(
+		ctx context.Context, auctionId string,
+	) (*WinningInfoOutputDTO, *internal_error.InternalError)
+}
+
 type AuctionInputDTO struct {
-	ProductName string           `json:"product_name"`
-	Category    string           `json:"category"`
-	Description string           `json:"description"`
+	ProductName string           `json:"product_name" binding:"required,min=1"`
+	Category    string           `json:"category" binding:"required,min=2"`
+	Description string           `json:"description" binding:"required,min=10,max=200"`
 	Condition   ProductCondition `json:"condition"`
 }
 

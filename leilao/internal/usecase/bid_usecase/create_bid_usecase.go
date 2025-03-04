@@ -11,7 +11,7 @@ import (
 	"github.com/thalisonh/auction/internal/internal_error"
 )
 
-type BidInputtDTO struct {
+type BidInputDTO struct {
 	UserId    string  `json:"user_id"`
 	AuctionId string  `json:"auction_id"`
 	Amount    float64 `json:"amount"`
@@ -39,7 +39,7 @@ var bidBatch []bid_entity.Bid
 type BidUsecaseInterface interface {
 	CreateBid(
 		ctx context.Context,
-		bidInputDTO BidInputtDTO,
+		bidInputDTO BidInputDTO,
 	) *internal_error.InternalError
 	FindWinningBidByAuctionId(
 		ctx context.Context,
@@ -109,7 +109,7 @@ func (bu *BidUsecase) triggerCreateRoutine(ctx context.Context) {
 
 func (bu *BidUsecase) CreateBid(
 	ctx context.Context,
-	bidInputDTO BidInputtDTO,
+	bidInputDTO BidInputDTO,
 ) *internal_error.InternalError {
 
 	bidEntity, err := bid_entity.CreateBid(bidInputDTO.UserId, bidInputDTO.AuctionId, bidInputDTO.Amount)

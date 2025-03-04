@@ -7,6 +7,12 @@ import (
 	"github.com/thalisonh/auction/internal/internal_error"
 )
 
+func NewUserUseCase(userRepository user_entity.UserRepositoryInterface) UserUseCaseInterface {
+	return &UserUseCase{
+		UserRepository: userRepository,
+	}
+}
+
 type UserUseCase struct {
 	UserRepository user_entity.UserRepositoryInterface
 }
@@ -17,10 +23,10 @@ type UserOutputDTO struct {
 }
 
 type UserUseCaseInterface interface {
-	FindUserBydId(ctx context.Context, id string) (*UserOutputDTO, *internal_error.InternalError)
+	FindUserById(ctx context.Context, id string) (*UserOutputDTO, *internal_error.InternalError)
 }
 
-func (u *UserUseCase) FindUserBydId(
+func (u *UserUseCase) FindUserById(
 	ctx context.Context, id string,
 ) (*UserOutputDTO, *internal_error.InternalError) {
 	userEntiry, err := u.UserRepository.FindUserById(ctx, id)
