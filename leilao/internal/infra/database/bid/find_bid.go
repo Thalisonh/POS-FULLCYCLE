@@ -16,7 +16,7 @@ func (bd BidRepository) FindBidByAuctionId(
 	ctx context.Context,
 	auctionId string,
 ) ([]bid_entity.Bid, *internal_error.InternalError) {
-	filter := bson.M{"auctionId": auctionId}
+	filter := bson.M{"auction_id": auctionId}
 
 	cursor, err := bd.Collection.Find(ctx, filter)
 	if err != nil {

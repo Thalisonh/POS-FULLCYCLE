@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -41,10 +42,15 @@ func main() {
 	router.GET("/auctions/:auctionId", auctionController.FindAuctionById)
 	router.POST("/auctions", auctionController.CreateAuction)
 	router.GET("/auction/winner/:auctionId", auctionController.FindWinningBidByAuctionId)
+
 	router.POST("/bid", bidController.CreateBid)
 	router.GET("/bid/:auctionId", bidController.FindBidByAuctionById)
-	router.GET("/user/:userId", userController.FindUserById)
 
+	router.GET("/user/:userId", userController.FindUserById)
+	router.GET("/users", userController.FindUsers)
+	router.POST("/user", userController.CreateUser)
+
+	fmt.Printf("Running on port 8080")
 	router.Run(":8080")
 }
 

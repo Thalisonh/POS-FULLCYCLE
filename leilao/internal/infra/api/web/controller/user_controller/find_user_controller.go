@@ -44,3 +44,16 @@ func (u *UserController) FindUserById(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userData)
 }
+
+func (u *UserController) FindUsers(c *gin.Context) {
+	userData, err := u.userUseCase.FindUsers(c)
+	if err != nil {
+		errRest := rest_err.ConvertError(err)
+
+		c.JSON(errRest.Code, errRest)
+
+		return
+	}
+
+	c.JSON(http.StatusOK, userData)
+}

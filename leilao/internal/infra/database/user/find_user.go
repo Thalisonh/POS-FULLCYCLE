@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type UserEntittMongo struct {
+type UserEntityMongo struct {
 	Id   string `bson:"_id"`
 	Name string `bson:"name"`
 }
@@ -30,8 +30,8 @@ func NewUserRepository(database *mongo.Database) *UserRespository {
 func (ur *UserRespository) FindUserById(ctx context.Context, userId string) (*user_entity.User, *internal_error.InternalError) {
 	filter := bson.M{"_id": userId}
 
-	var userEntittMongo UserEntittMongo
-	err := ur.Collection.FindOne(ctx, filter).Decode(&userEntittMongo)
+	var userEntityMongo UserEntityMongo
+	err := ur.Collection.FindOne(ctx, filter).Decode(&userEntityMongo)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			logger.Error(fmt.Sprintf("User not found with this id = %s", userId), err)
@@ -44,7 +44,36 @@ func (ur *UserRespository) FindUserById(ctx context.Context, userId string) (*us
 	}
 
 	return &user_entity.User{
-		Id:   userEntittMongo.Id,
-		Name: userEntittMongo.Name,
+		Id:   userEntityMongo.Id,
+		Name: userEntityMongo.Name,
 	}, nil
+}
+
+func (ar *UserRespository) FindUsers(
+	ctx context.Context,
+) ([]user_entity.User, *internal_error.InternalError) {
+	filter := bson.M{}
+
+	cursor, err := ar.Collection.Find(ctx, filter)
+	if err != nil {
+		logger.Error("Error trying to find users", err)
+		return nil, internal_error.NewInternalServerError("Error trying to find users")
+	}
+	defer cursor.Close(ctx)
+
+	var entityMongo []UserEntityMongo
+	if err := cursor.All(ctx, &entityMongo); err != nil {
+		logger.Error("Error trying to find users", err)
+		return nil, internal_error.NewInternalServerError("Error trying to find users")
+	}
+
+	var entity []user_entity.User
+	for _, item := range entityMongo {
+		entity = append(entity, user_entity.User{
+			Id:   item.Id,
+			Name: item.Name,
+		})
+	}
+
+	return entity, nil
 }
