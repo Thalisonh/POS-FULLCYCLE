@@ -11,6 +11,7 @@ type StorageInterface interface {
 	Increment(ctx context.Context, key string) (int, error)
 	Get(ctx context.Context, key string) (int, error)
 	SetNX(ctx context.Context, key string, value int, expiration time.Duration) (bool, error)
+	FlushAll() error
 }
 
 type RedisStorage struct {
@@ -50,4 +51,8 @@ func (r *RedisStorage) SetNX(ctx context.Context, key string, value int, expirat
 		return false, err
 	}
 	return set, nil
+}
+
+func (r *RedisStorage) FlushAll() error {
+	return r.Client.FlushAll(context.Background()).Err()
 }
